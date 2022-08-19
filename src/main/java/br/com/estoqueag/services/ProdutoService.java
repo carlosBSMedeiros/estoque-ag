@@ -1,5 +1,7 @@
 package br.com.estoqueag.services;
 
+import java.util.Map;
+
 import javax.persistence.EntityNotFoundException;
 
 import org.modelmapper.ModelMapper;
@@ -24,7 +26,7 @@ public class ProdutoService implements ServicoGenerico<ProdutoDTO, Long> {
 	
 	@Override
 	public ProdutoDTO incluir(ProdutoDTO dto) {
-		validarProduto(dto);
+		validarProduto(dto, "inc");
 		
 		Produto p = mapper.map(dto, Produto.class);
 		p = produtoRepository.save(p);
@@ -47,8 +49,15 @@ public class ProdutoService implements ServicoGenerico<ProdutoDTO, Long> {
 	}
 
 	@Override
-	public Page<ProdutoDTO> listarTodos(Pageable pageable) {
-		Page<Produto> result = produtoRepository.findAll(pageable);
+	public Page<ProdutoDTO> listarTodos(Map<String,String> requestParams, Pageable pageable) {
+		Page<Produto> result; 
+		
+		if(requestParams.isEmpty()) {
+			result = produtoRepository.findAll(pageable);
+		} else {
+			result = produtoRepository.findAll(pageable);
+		}
+		
 		Page<ProdutoDTO> page = result.map(produto -> mapper.map(produto, ProdutoDTO.class));
 		return page;
 	}
@@ -75,6 +84,9 @@ public class ProdutoService implements ServicoGenerico<ProdutoDTO, Long> {
 		produtoRepository.saveAndFlush(p);
 	}
 	
+	private void validarProduto(ProdutoDTO dto) {
+		this.validarProduto(dto, "");
+	}
 	/**
 	 * Responsavel por realizar validações gerais no ProdutoDTO recebido como parâmetro 
 	 * 
@@ -82,9 +94,24 @@ public class ProdutoService implements ServicoGenerico<ProdutoDTO, Long> {
 	 * @param ProdutoDTO dto de produto
 	 * @throws IllegalArgumentException
 	 * */
-	private void validarProduto(ProdutoDTO dto) {
-		if(dto.getDataFabricacao().after(dto.getDataValidade())) {
-			throw new IllegalArgumentException("A data de fabriação deve ser anterior a data de validade do produto ");
+	private void validarProduto(ProdutoDTO dto, String oper) {
+		
+		StringBuilder errosValidacao = new StringBuilder();
+		
+		if(!"inc".equals(oper) && dto.getCodigo() == null) {
+			errosValidacao.append("Código não pode ser nulo ou vazio");
+		}
+		
+		if( dto.getDescricao().trim().isEmpty()) {
+			errosValidacao.append("Descricao não pode ser nula ou vazia");
+		}
+		
+		if(!(dto.getDataFabricacao().compareTo(dto.getDataValidade()) < 0)) {
+			errosValidacao.append("A data de fabriação deve ser anterior a data de validade do produto;");
+		}
+		
+		if(!errosValidacao.isEmpty()) {
+			throw new IllegalArgumentException(errosValidacao.toString());
 		}
 		
 		//garante que o produto está ativado

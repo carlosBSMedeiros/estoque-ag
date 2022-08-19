@@ -32,7 +32,7 @@ public class Produto {
 	
 	private String descricao;
 	
-    @Enumerated(EnumType.ORDINAL)
+    @Enumerated(EnumType.STRING)
 	private ProdutoSituacao situacao;
     private Date dataFabricacao;
     private Date dataValidade;
