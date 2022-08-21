@@ -56,7 +56,7 @@ public class ProdutoController implements ControllerGenerico<ProdutoDTO, Long> {
 	@GetMapping
 	@ResponseStatus(HttpStatus.OK)
 	public Page<ProdutoDTO> listarTodos(@RequestParam Map<String,String> requestParams, Pageable pageable) {
-		return produtoService.listarTodos(requestParams,pageable);
+		return produtoService.listarTodos(pageable);
 	}
 	
 	@Override

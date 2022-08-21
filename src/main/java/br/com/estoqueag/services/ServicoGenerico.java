@@ -1,7 +1,5 @@
 package br.com.estoqueag.services;
 
-import java.util.Map;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -13,7 +11,7 @@ public interface ServicoGenerico<T extends DTOGenerico, I> {
 	
 	public T alterar(T dto);
 	
-	public Page<T> listarTodos(Map<String,String> requestParams, Pageable pageable);
+	public Page<T> listarTodos(Pageable pageable);
 	
 	public T listarPorId(I id);
 	

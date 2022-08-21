@@ -1,7 +1,5 @@
 package br.com.estoqueag.services;
 
-import java.util.Map;
-
 import javax.persistence.EntityNotFoundException;
 
 import org.modelmapper.ModelMapper;
@@ -14,6 +12,7 @@ import br.com.estoqueag.dtos.ProdutoDTO;
 import br.com.estoqueag.entities.Produto;
 import br.com.estoqueag.entities.enums.ProdutoSituacao;
 import br.com.estoqueag.repositories.ProdutoRepository;
+import br.com.estoqueag.utils.ValidadorProduto;
 
 @Service
 public class ProdutoService implements ServicoGenerico<ProdutoDTO, Long> {
@@ -22,11 +21,14 @@ public class ProdutoService implements ServicoGenerico<ProdutoDTO, Long> {
 	private ProdutoRepository produtoRepository;
 	
 	@Autowired
+	private ValidadorProduto validadorProduto;
+	
+	@Autowired
 	private ModelMapper mapper;
 	
 	@Override
 	public ProdutoDTO incluir(ProdutoDTO dto) {
-		validarProduto(dto, "inc");
+		validadorProduto.validarProduto(dto, "inc");
 		
 		Produto p = mapper.map(dto, Produto.class);
 		p = produtoRepository.save(p);
@@ -36,7 +38,7 @@ public class ProdutoService implements ServicoGenerico<ProdutoDTO, Long> {
 
 	@Override
 	public ProdutoDTO alterar(ProdutoDTO dto) {
-		validarProduto(dto);
+		validadorProduto.validarProduto(dto, "alt");
 
 		if(!produtoRepository.existsById(dto.getCodigo())){
 			throw new EntityNotFoundException("Não existe produto com o código: " + dto.getCodigo());
@@ -49,14 +51,11 @@ public class ProdutoService implements ServicoGenerico<ProdutoDTO, Long> {
 	}
 
 	@Override
-	public Page<ProdutoDTO> listarTodos(Map<String,String> requestParams, Pageable pageable) {
+	public Page<ProdutoDTO> listarTodos( Pageable pageable) {
 		Page<Produto> result; 
 		
-		if(requestParams.isEmpty()) {
-			result = produtoRepository.findAll(pageable);
-		} else {
-			result = produtoRepository.findAll(pageable);
-		}
+		//TODO: Implementar busca com parâmetros dinâmicos
+		result = produtoRepository.findAll(pageable);
 		
 		Page<ProdutoDTO> page = result.map(produto -> mapper.map(produto, ProdutoDTO.class));
 		return page;
@@ -84,38 +83,6 @@ public class ProdutoService implements ServicoGenerico<ProdutoDTO, Long> {
 		produtoRepository.saveAndFlush(p);
 	}
 	
-	private void validarProduto(ProdutoDTO dto) {
-		this.validarProduto(dto, "");
-	}
-	/**
-	 * Responsavel por realizar validações gerais no ProdutoDTO recebido como parâmetro 
-	 * 
-	 * @see ProdutoDTO
-	 * @param ProdutoDTO dto de produto
-	 * @throws IllegalArgumentException
-	 * */
-	private void validarProduto(ProdutoDTO dto, String oper) {
-		
-		StringBuilder errosValidacao = new StringBuilder();
-		
-		if(!"inc".equals(oper) && dto.getCodigo() == null) {
-			errosValidacao.append("Código não pode ser nulo ou vazio");
-		}
-		
-		if( dto.getDescricao().trim().isEmpty()) {
-			errosValidacao.append("Descricao não pode ser nula ou vazia");
-		}
-		
-		if(!(dto.getDataFabricacao().compareTo(dto.getDataValidade()) < 0)) {
-			errosValidacao.append("A data de fabriação deve ser anterior a data de validade do produto;");
-		}
-		
-		if(!errosValidacao.isEmpty()) {
-			throw new IllegalArgumentException(errosValidacao.toString());
-		}
-		
-		//garante que o produto está ativado
-		dto.setSituacao(ProdutoSituacao.ATIVO);
-	}
+
 
 }
